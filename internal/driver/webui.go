@@ -132,6 +132,8 @@ func serveWebInterface(hostport string, p *profile.Profile, o *plugin.Options, d
 				w.Header().Set("Content-Disposition", "attachment;filename=profile.pb.gz")
 				p.Write(w)
 			}),
+			"/json/flamegraph": http.HandlerFunc(ui.flamegraphData),
+			"/json/top":        http.HandlerFunc(ui.topData),
 		},
 	}
 
@@ -172,6 +174,7 @@ func getHostAndPort(hostport string) (string, int, error) {
 	}
 	return host, port, nil
 }
+
 func defaultWebServer(args *plugin.HTTPServerArgs) error {
 	ln, err := net.Listen("tcp", args.Hostport)
 	if err != nil {
@@ -385,7 +388,6 @@ func (ui *webInterface) disasm(w http.ResponseWriter, req *http.Request) {
 	ui.render(w, req, "plaintext", rpt, errList, legend, webArgs{
 		TextBody: out.String(),
 	})
-
 }
 
 // source generates a web page containing source code annotated with profile
