@@ -134,6 +134,8 @@ func serveWebInterface(hostport string, p *profile.Profile, o *plugin.Options, d
 			}),
 			"/json/flamegraph": http.HandlerFunc(ui.flamegraphData),
 			"/json/top":        http.HandlerFunc(ui.topData),
+			"/graph/svg":       http.HandlerFunc(ui.dotsvg),
+			"/graph/dot":       http.HandlerFunc(ui.dotgraph),
 		},
 	}
 

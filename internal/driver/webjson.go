@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -93,4 +94,49 @@ func (ui *webInterface) flamegraphData(w http.ResponseWriter, req *http.Request)
 		http.Error(w, "error serializing flame graph", http.StatusInternalServerError)
 		ui.options.UI.PrintErr(err)
 	}
+}
+
+// dotsvg generates an svg diagram.
+func (ui *webInterface) dotsvg(w http.ResponseWriter, req *http.Request) {
+	rpt, errList := ui.makeReport(w, req, []string{"svg"}, nil)
+	if rpt == nil {
+		ui.options.UI.PrintErr(errList)
+		return // error already reported
+	}
+
+	// Generate dot graph.
+	g, config := report.GetDOT(rpt)
+	config.Labels = nil
+	dot := &bytes.Buffer{}
+	graph.ComposeDot(dot, g, &graph.DotAttributes{}, config)
+
+	// Convert to svg.
+	svg, err := dotToSvg(dot.Bytes())
+	if err != nil {
+		http.Error(w, "Could not execute dot; may need to install graphviz.", http.StatusNotImplemented)
+		ui.options.UI.PrintErr("Failed to execute dot. Is Graphviz installed?\n", err)
+		return
+	}
+	w.Header().Add("Content-Type", "image/svg+xml")
+	w.WriteHeader(http.StatusOK)
+	w.Write(svg)
+}
+
+// dotgraph generates dot formated graph.
+func (ui *webInterface) dotgraph(w http.ResponseWriter, req *http.Request) {
+	rpt, errList := ui.makeReport(w, req, []string{"svg"}, nil)
+	if rpt == nil {
+		ui.options.UI.PrintErr(errList)
+		return // error already reported
+	}
+
+	// Generate dot graph.
+	g, config := report.GetDOT(rpt)
+	config.Labels = nil
+	dot := &bytes.Buffer{}
+	graph.ComposeDot(dot, g, &graph.DotAttributes{}, config)
+
+	w.Header().Add("Content-Type", "image/svg+xml")
+	w.WriteHeader(http.StatusOK)
+	w.Write(dot.Bytes())
 }
